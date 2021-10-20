@@ -4,39 +4,43 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.beatbox.databinding.ActivityMainBinding
 import com.example.beatbox.databinding.ListItemSoundBinding
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var beatBox: BeatBox
+    private val beatBoxViewModel: BeatBoxViewModel by lazy{ //here we are using view model with args(ViewModelFactory allows us to do it)
+        ViewModelProvider(this, BeatBoxViewModelFactory(assets, this))
+            .get(BeatBoxViewModel::class.java)
+    }
+    private lateinit var mainBinding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        beatBox = BeatBox(assets)
-        val binding: ActivityMainBinding = DataBindingUtil.setContentView(
+        mainBinding = DataBindingUtil.setContentView(  //set view for activity with possibility of data-binding
             this,
             R.layout.activity_main
         )
+        mainBinding.viewModel = beatBoxViewModel.mainBindingViewModel   //set ViewModel for main screen
 
-        binding.recyclerView.apply {
+        mainBinding.recyclerView.apply {
             layoutManager = GridLayoutManager(context, 3)
-            adapter = SoundAdapter(beatBox.sounds)
+            adapter = SoundAdapter(beatBoxViewModel.beatBox.sounds)
         }
     }
 
     private inner class SoundHolder(private val binding: ListItemSoundBinding)
         : RecyclerView.ViewHolder(binding.root) {
         init {
-            binding.viewModel = SoundViewModel()
+            binding.viewModel = SoundViewModel(beatBoxViewModel.beatBox)
         }
 
         fun bind(sound: Sound) {
             binding.apply {
                 viewModel?.sound = sound
-                executePendingBindings()
+                executePendingBindings()    //executes bindings immediately
             }
         }
     }
@@ -61,4 +65,5 @@ class MainActivity : AppCompatActivity() {
             return soundsList.size
         }
     }
+
 }
